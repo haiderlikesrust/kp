@@ -8,3 +8,4 @@ docs
 !.env.example
 .git
 *.log
+video
