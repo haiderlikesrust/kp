@@ -6,7 +6,10 @@ import { useGame } from '../lib/game.tsx'
 import { useWallet } from '../lib/wallet.tsx'
 import { Avatar } from './Avatar.tsx'
 import { ContractAddress } from './ContractAddress.tsx'
-import { Mark, Wordmark } from './Logo.tsx'
+import { Mark, Wordmark, XLogo } from './Logo.tsx'
+
+const X_HANDLE = 'keepripping'
+const X_URL = `https://x.com/${X_HANDLE}`
 
 const LINKS = [
   { to: '/', label: 'Rip', end: true },
@@ -136,6 +139,16 @@ function Navbar() {
               Practice
             </span>
           ) : null}
+          <a
+            href={X_URL}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={`KeepRipping on X, @${X_HANDLE}`}
+            title={`@${X_HANDLE} on X`}
+            className="grid size-9 place-items-center rounded-lg text-white/70 hover:bg-white/10 hover:text-white"
+          >
+            <XLogo size={15} />
+          </a>
           <button
             type="button"
             onClick={theme.toggle}
@@ -186,6 +199,9 @@ export function Layout() {
                   {link.label}
                 </Link>
               ))}
+              <a href={X_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-mute hover:text-ink">
+                <XLogo size={13} />@{X_HANDLE}
+              </a>
             </nav>
             <p className="text-xs leading-relaxed text-faint">
               Independent project, not affiliated with Nintendo, The Pokémon Company or Collector Crypt. Cards are
