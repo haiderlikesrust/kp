@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#15151F" />
+    <meta name="description" content="Burn to rip a real graded card pack. Every rip adds time. The last ripper takes the whole pot." />
+    <meta property="og:title" content="KeepRipping" />
+    <meta property="og:description" content="Burn to rip real graded packs. Last rip takes it all." />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>KeepRipping</title>
+    <script>
+      // Dark by default. Applied before first paint, so a light-mode choice never flashes.
+      try {
+        if (localStorage.getItem('keepripping-theme') === 'light') document.documentElement.dataset.theme = 'light'
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
