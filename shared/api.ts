@@ -86,6 +86,8 @@ export interface GameState {
 export interface PublicConfig {
   mode: 'mock' | 'devnet' | 'mainnet'
   coinMint: string
+  /** The real coin's address, for display. Null until it is set. */
+  contractAddress: string | null
   coinDecimals: number
   tokenProgram: string
   burnTokens: number

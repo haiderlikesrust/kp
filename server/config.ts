@@ -12,6 +12,8 @@ export interface Config {
   databaseUrl?: string
   pgliteDir?: string
   coinMint: string
+  /** Shown on the site. Practice mode's own coin is fake and never shown. */
+  contractAddress: string | null
   rpcUrl: string
   dasRpcUrl: string
   devPrivateKey: string
@@ -76,6 +78,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     return {
       ...shared,
       coinMint: '',
+      contractAddress: env.COIN_MINT || null,
       rpcUrl: '',
       dasRpcUrl: '',
       devPrivateKey: '',
@@ -98,6 +101,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   return {
     ...shared,
     coinMint: required(env, 'COIN_MINT'),
+    contractAddress: env.COIN_MINT || null,
     rpcUrl,
     dasRpcUrl: env.DAS_RPC_URL || rpcUrl,
     devPrivateKey: required(env, 'DEV_WALLET_PRIVATE_KEY'),

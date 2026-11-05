@@ -13,6 +13,8 @@ import {
 describe('ladder', () => {
   it('matches the table in the plan', () => {
     expect(LADDER.map((step) => [step.minTreasury, stepPackCount(step), stepCost(step)])).toEqual([
+      [100, 3, 75],
+      [250, 9, 225],
       [650, 25, 625],
       [1_000, 26, 950],
       [2_500, 52, 2_250],
@@ -38,8 +40,9 @@ describe('ladder', () => {
   })
 
   it('picks nothing below the first step', () => {
-    expect(pickStep(649.99)).toBeNull()
-    expect(pickStep(650)).toBe(LADDER[0])
+    expect(pickStep(99.99)).toBeNull()
+    expect(pickStep(100)).toBe(LADDER[0])
+    expect(stepPackCount(pickStep(100)!)).toBe(3)
   })
 
   it('maps every price to a machine', () => {
@@ -52,7 +55,7 @@ describe('fitToStock', () => {
   const full = new Map(PACK_TIERS.map((tier) => [tier.price as number, 10_000]))
 
   it('leaves the lineup alone when everything is in stock', () => {
-    const prices = expandStep(LADDER[3]!)
+    const prices = expandStep(LADDER[5]!)
     expect(fitToStock(prices, full).sort((a, b) => a - b)).toEqual([...prices].sort((a, b) => a - b))
   })
 
@@ -62,7 +65,7 @@ describe('fitToStock', () => {
   })
 
   it('can only ever reduce spend', () => {
-    const prices = expandStep(LADDER[4]!)
+    const prices = expandStep(LADDER[6]!)
     const stock = new Map([[25, 40], [50, 5], [100, 0], [250, 1], [500, 0]])
     const fitted = fitToStock(prices, stock)
     const total = (list: number[]) => list.reduce((sum, price) => sum + price, 0)

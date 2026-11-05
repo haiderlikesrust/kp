@@ -18,6 +18,8 @@ export interface LadderStep {
 }
 
 export const LADDER: readonly LadderStep[] = [
+  { minTreasury: 100, packs: { 25: 3 } },
+  { minTreasury: 250, packs: { 25: 9 } },
   { minTreasury: 650, packs: { 25: 25 } },
   { minTreasury: 1_000, packs: { 25: 18, 50: 6, 100: 2 } },
   { minTreasury: 2_500, packs: { 25: 30, 50: 14, 100: 8 } },

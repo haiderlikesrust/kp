@@ -136,6 +136,7 @@ async function main(): Promise<void> {
   const publicConfig: PublicConfig = {
     mode: config.mode,
     coinMint,
+    contractAddress: config.contractAddress,
     coinDecimals: decimals,
     tokenProgram,
     burnTokens: config.burnTokens,

@@ -76,11 +76,12 @@ describe('a whole round', () => {
   })
 
   it('waits for funding below the lowest step', async () => {
-    world = await makeWorld({ usdc: 600 })
+    world = await makeWorld({ usdc: 90 })
     await world.cycle(50)
     expect(await world.count(`SELECT count(*)::int AS n FROM rounds`)).toBe(0)
-    world.chain.usdc = 650n * 1_000_000n
-    await world.openRound()
+    world.chain.usdc = 100n * 1_000_000n
+    const id = await world.openRound()
+    expect((await world.round(id)).packs_total).toBe(3)
   })
 
   it('waits for SOL to deliver the round', async () => {

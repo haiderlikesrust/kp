@@ -5,6 +5,7 @@ import { MIN_TREASURY } from '../../../shared/ladder.ts'
 import { RULES, minPacksForDrop, slotsToSeconds } from '../../../shared/rules.ts'
 import { Avatar } from '../components/Avatar.tsx'
 import { Card, CardCaption, RARITY_COLOR } from '../components/Card.tsx'
+import { ContractAddress } from '../components/ContractAddress.tsx'
 import { Pack } from '../components/Pack.tsx'
 import { clock, compact, short, usd } from '../lib/format.ts'
 import { useGame, useSecondsUntil } from '../lib/game.tsx'
@@ -255,6 +256,7 @@ function Hero({ state, round, ripper }: { state: GameState; round: RoundView; ri
             </span>
           ) : null}
         </div>
+        <ContractAddress className="mt-2" />
         <h1 className="mt-4 text-[2.8rem] leading-[1.02] text-white sm:text-[3.7rem]">
           Keep ripping.
           <br />
@@ -637,6 +639,7 @@ function Waiting({ state }: { state: GameState }) {
   return (
     <section className="hero-band grid items-center gap-10 lg:grid-cols-2">
       <div className="rise-in text-center lg:text-left">
+        <ContractAddress className="mb-5 justify-center lg:justify-start" />
         <h1 className="text-5xl leading-[1.02] text-white sm:text-6xl">
           {filling ? 'Filling the treasury.' : 'Next round soon.'}
           <br />

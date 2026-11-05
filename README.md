@@ -38,7 +38,7 @@ All of these live in [shared/rules.ts](shared/rules.ts) and [shared/ladder.ts](s
 - **Winner:** the last counted rip when the timer ends gets every card left in the pot. If the last pack goes first, that ripper wins immediately.
 - **5-minute drop:** if nobody has won, 5 random cards go to the 5 biggest burners of that window, one each. A round needs at least 53 packs to last that long.
 - **Late burns:** a burn landing after the end becomes a voucher for a free rip in a later round.
-- **Round size:** set by the treasury ladder, from 25 $25 packs at $650 up to 114 mixed packs at $10,000. $500 is the most it will spend on one pack.
+- **Round size:** set by the treasury ladder, from 3 $25 packs at $100 up to 114 mixed packs at $10,000. $500 is the most it will spend on one pack.
 
 Timers run on Solana slots, so chain order decides everything and anyone can recheck a result. Dollar values are for display only and never affect the game.
 

@@ -5,6 +5,7 @@ import { short } from '../lib/format.ts'
 import { useGame } from '../lib/game.tsx'
 import { useWallet } from '../lib/wallet.tsx'
 import { Avatar } from './Avatar.tsx'
+import { ContractAddress } from './ContractAddress.tsx'
 import { Mark, Wordmark } from './Logo.tsx'
 
 const LINKS = [
@@ -176,6 +177,7 @@ export function Layout() {
           <div>
             <Wordmark size="text-3xl" />
             <p className="mt-3 max-w-sm font-medium text-mute">Keep ripping. Last rip takes it all.</p>
+            <ContractAddress className="mt-4" />
           </div>
           <div className="grid content-start gap-3">
             <nav aria-label="Footer" className="flex flex-wrap gap-x-5 gap-y-1 font-display font-semibold">
