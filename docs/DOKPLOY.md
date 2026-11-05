@@ -5,7 +5,7 @@ KeepRipping is one Docker image: a Node server that serves the site and API and 
 | Dokploy service | What it is | Holds |
 |---|---|---|
 | **Application** `keepripping` | This repo, built from the [`Dockerfile`](../Dockerfile) and run as a Docker Swarm service. Traefik sends `keepripp.ing` to port 3000. | The dev wallet key, at runtime only |
-| **Database** `keepripping-db` | PostgreSQL 17 | Rounds, burns, packs, payouts, the ledger |
+| **Database** `keepripping-db` | PostgreSQL 18 | Rounds, burns, packs, payouts, the ledger |
 
 Use a Dokploy **Application**, not a Docker Compose service. Compose stops the old server before starting the new one, so the site goes down on every deploy. An Application runs on Swarm, which can start the new version first.
 
@@ -22,7 +22,7 @@ Use a Dokploy **Application**, not a Docker Compose service. Compose stops the o
 ## Set up
 
 1. **Database.**
-   - In your Dokploy project, choose **Create Service → Database → PostgreSQL**. Name it `keepripping-db`, use image `postgres:17`, set a long alphanumeric password, and deploy.
+   - In your Dokploy project, choose **Create Service → Database → PostgreSQL**. Name it `keepripping-db`, keep the default image (`postgres:18`), generate a password, and deploy.
    - Copy its **Internal Connection URL**. That is `DATABASE_URL`.
    - In its **Backups** tab, add an S3 destination and a daily schedule. Run one restore test before launch.
 2. **Application.**
@@ -36,21 +36,34 @@ Use a Dokploy **Application**, not a Docker Compose service. Compose stops the o
 4. **Domain.**
    - In **Domains**, add `keepripp.ing` with path `/`, container port **3000**, and HTTPS with Let's Encrypt. Point the domain's DNS at the VPS.
    - For `www.keepripp.ing`, add it the same way, then add a "www to non-www" redirect under **Advanced → Redirects**.
-5. **Zero-downtime settings.** In **Advanced → Cluster Settings**:
-   - **Replicas:** leave at `1`. Only one server can own the database, so a second replica would just sit in standby.
-   - **Swarm Settings → Update Config:**
-     ```json
-     { "Parallelism": 1, "Delay": 0, "FailureAction": "rollback", "Monitor": 60000000000, "MaxFailureRatio": 0, "Order": "start-first" }
-     ```
-   - **Swarm Settings → Rollback Config:**
-     ```json
-     { "Parallelism": 1, "Delay": 0, "FailureAction": "pause", "Monitor": 60000000000, "MaxFailureRatio": 0, "Order": "start-first" }
-     ```
-   - **Health Check:** the same check that is built into the image. Paste it anyway, so an update never starts without one:
-     ```json
-     { "Test": ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"], "Interval": 5000000000, "Timeout": 3000000000, "StartPeriod": 60000000000, "Retries": 3 }
-     ```
-   - Durations in these fields are in nanoseconds (5000000000 = 5 s).
+5. **Zero-downtime settings.** In **Advanced → Cluster Settings**, leave **Replicas** at `1`, since only one server can own the database. Then open **Swarm Settings** and fill in these sections. Durations are in nanoseconds (5000000000 = 5 s).
+
+   | Section | Field | Value |
+   |---|---|---|
+   | **Update Config** | Parallelism | `1` |
+   | | Delay | `0` |
+   | | Failure Action | Rollback |
+   | | Monitor | `60000000000` |
+   | | Max Failure Ratio | `0` |
+   | | Order | **Start First** |
+   | **Rollback Config** | Parallelism | `1` |
+   | | Delay | `0` |
+   | | Failure Action | Pause |
+   | | Monitor | `60000000000` |
+   | | Max Failure Ratio | `0` |
+   | | Order | **Start First** |
+   | **Health Check** | Test Commands, one per row | `CMD`, `node`, `-e`, then the script below |
+   | | Interval | `5000000000` |
+   | | Timeout | `3000000000` |
+   | | Start Period | `60000000000` |
+   | | Retries | `3` |
+
+   The health check script is the same one built into the image. Set it anyway, so an update never starts without one:
+
+   ```js
+   fetch('http://127.0.0.1:3000/health').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))
+   ```
+
 6. **Shared site files.**
    - In **Advanced → Volumes**, add a **Volume Mount** with volume name `keepripping-assets` and mount path `/app/dist/assets`.
    - Each new container adds its build's files there, next to earlier builds'. Without this volume, someone who opened the site just before an update may have to refresh before their next rip.
