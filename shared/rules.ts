@@ -7,13 +7,13 @@ export const RULES = {
   heatWindowSlots: 25,
   /**
    * Time each rip adds, by rips in the heat window including this one. The more
-   * people ripping, the less each rip buys, until it buys nothing.
+   * people ripping, the less each rip buys. Each round saves its own copy.
    */
   heatTiers: [
-    { fromRips: 1, slots: 13 }, // about +5s
-    { fromRips: 3, slots: 8 }, // about +3s
-    { fromRips: 6, slots: 3 }, // about +1s
-    { fromRips: 10, slots: 0 },
+    { fromRips: 1, slots: 25 }, // about +10s
+    { fromRips: 3, slots: 13 }, // about +5s
+    { fromRips: 6, slots: 8 }, // about +3s
+    { fromRips: 10, slots: 3 }, // about +1s
   ],
   dropSlots: 750, // about 5 minutes
   dropSize: 5,
@@ -33,6 +33,19 @@ export const RULES = {
 export const SLOT_MS = 400
 
 export type HeatTier = { fromRips: number; slots: number }
+
+/** The timer rounds ran on before each one saved its own. */
+const LEGACY_HEAT_TIERS: readonly HeatTier[] = [
+  { fromRips: 1, slots: 13 },
+  { fromRips: 3, slots: 8 },
+  { fromRips: 6, slots: 3 },
+  { fromRips: 10, slots: 0 },
+]
+
+/** A round keeps the timer it opened with, so a rule change can't move a running clock. */
+export function rulesForRound(savedTiers: string | null | undefined) {
+  return { ...RULES, heatTiers: savedTiers ? (JSON.parse(savedTiers) as HeatTier[]) : LEGACY_HEAT_TIERS }
+}
 
 export const USDC_DECIMALS = 6
 

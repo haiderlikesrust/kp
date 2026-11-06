@@ -26,9 +26,12 @@ import type { AssetInfo, Chain, Commitment, ParsedTx, SignedTx, TxStatus } from 
 
 const MEMO_PROGRAM = new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr')
 const TRANSFER_COMPUTE_UNITS = 400_000
+/** Reads fail outright on anything newer, and one unreadable burn would stall the indexer. */
+const MAX_TX_VERSION = 1
 
 export interface SolanaOptions {
   rpcUrl: string
+  wsUrl?: string
   dasRpcUrl: string
   devPrivateKey: string
   usdcMint: string
@@ -59,7 +62,7 @@ export class SolanaChain implements Chain {
   }
 
   constructor(private opts: SolanaOptions) {
-    this.connection = new Connection(opts.rpcUrl, { commitment: 'confirmed' })
+    this.connection = new Connection(opts.rpcUrl, { commitment: 'confirmed', wsEndpoint: opts.wsUrl })
     this.dev = parseKeypair(opts.devPrivateKey)
     this.umi = createUmi(opts.rpcUrl).use(mplCore()).use(mplTokenMetadata())
     const signer = createSignerFromKeypair(this.umi, fromWeb3JsKeypair(this.dev))
@@ -81,7 +84,7 @@ export class SolanaChain implements Chain {
   async getParsedTx(signature: string, commitment: Commitment): Promise<ParsedTx | null> {
     const tx = await this.connection.getParsedTransaction(signature, {
       commitment,
-      maxSupportedTransactionVersion: 0,
+      maxSupportedTransactionVersion: MAX_TX_VERSION,
     })
     return tx as unknown as ParsedTx | null
   }
@@ -99,7 +102,7 @@ export class SolanaChain implements Chain {
     if (first === undefined) return null
     const block = await this.connection.getBlock(first, {
       commitment: 'finalized',
-      maxSupportedTransactionVersion: 0,
+      maxSupportedTransactionVersion: MAX_TX_VERSION,
       transactionDetails: 'none',
       rewards: false,
     })

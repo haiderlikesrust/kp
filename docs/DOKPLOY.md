@@ -82,7 +82,7 @@ On a real deployment, the new container's log shows `standby: waiting for the ru
 
 ## Go live
 
-1. Set `DATABASE_URL`, `COIN_MINT`, `DEV_WALLET_PRIVATE_KEY`, `SOLANA_RPC_URL`, `JUPITER_API_KEY`, `COLLECTOR_CRYPT_API_KEY` and `ALERT_WEBHOOK_URL`.
+1. Set `DATABASE_URL`, `COIN_MINT`, `DEV_WALLET_PRIVATE_KEY`, `SOLANA_RPC_URL`, `JUPITER_API_KEY`, `COLLECTOR_CRYPT_API_KEY` and `ALERT_WEBHOOK_URL`. Add `SOLANA_WS_URL` if your provider's WebSocket isn't at the same address as its RPC, and `DAS_RPC_URL` if its RPC can't answer `getAsset`.
 2. Fund the dev wallet with SOL. The treasury fills from creator fees.
 3. Open the application's terminal in Dokploy and run the read-only check. It also reports which token your fees are paid in and whether they reach the dev wallet:
    ```sh

@@ -21,7 +21,7 @@ const CONFETTI = ['#ff4438', '#ff8f2e', '#ffc02e', '#10b981', '#2f6dff', '#7d5cf
 /** Relative gauge widths: wider zones take more rips to cross. */
 const HEAT_ZONES = [2, 3, 4, 1.4]
 
-const heatLevel = (seconds: number): number => Math.max(0, HEAT_SECONDS.indexOf(seconds))
+const heatLevel = (recentRips: number): number => RULES.heatTiers.filter((tier) => recentRips + 1 >= tier.fromRips).length - 1
 
 /** Eases a number toward its latest value, so totals tick up as they change. */
 function useCountUp(target: number): number {
@@ -90,7 +90,7 @@ function TimerPanel({ round }: { round: RoundView }) {
   const ended = round.status === 'cutoff'
   const idle = round.status === 'open'
   const last = round.rips.at(-1)
-  const level = heatLevel(round.heat.nextAddSeconds)
+  const level = heatLevel(round.heat.recentRips)
   const urgent = ended || (seconds !== null && seconds < 10)
 
   return (
@@ -483,7 +483,7 @@ function Pot({ round }: { round: RoundView }) {
 function Steps() {
   const steps = [
     { icon: Flame, tone: 'bg-[#ffb4a8] text-night', title: 'Burn to rip', text: 'Burn 100K coins and we open a real graded pack from the treasury. That is all you pay.' },
-    { icon: Clock, tone: 'bg-[#b9c6ff] text-night', title: 'Keep the clock alive', text: 'Each rip adds 5 seconds, then 3, then 1, then nothing as the crowd piles in.' },
+    { icon: Clock, tone: 'bg-[#b9c6ff] text-night', title: 'Keep the clock alive', text: 'Each rip adds 10 seconds, then 5, then 3, then 1 as the crowd piles in.' },
     { icon: Crown, tone: 'bg-gold text-night', title: 'Last rip takes it all', text: 'When the clock hits zero, the last ripper wins every card in the pot.' },
   ]
   return (

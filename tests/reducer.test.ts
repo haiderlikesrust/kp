@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { reduceRound, rankBurners, type RipEvent } from '../server/engine/reducer.ts'
-import { RULES, minPacksForDrop } from '../shared/rules.ts'
+import { RULES, minPacksForDrop, rulesForRound } from '../shared/rules.ts'
 
 let seq = 0
 function rip(wallet: string, slot: number, blockIndex = 0): RipEvent {
@@ -19,7 +19,7 @@ describe('timer', () => {
     expect(result.nextDropSlot).toBeNull()
   })
 
-  it('starts at about 30s and a lone rip adds about 5s', () => {
+  it('starts at about 30s and a lone rip adds about 10s', () => {
     const result = reduceRound({
       packsTotal: 25,
       events: [rip('a', FIRST), rip('b', FIRST + 40), rip('c', FIRST + 80)],
@@ -27,7 +27,7 @@ describe('timer', () => {
     })
     expect(result.status).toBe('live')
     expect(result.firstSlot).toBe(FIRST)
-    expect(result.deadlineSlot).toBe(D0 + 2 * 13)
+    expect(result.deadlineSlot).toBe(D0 + 2 * 25)
     expect(result.lastRipper).toBe('c')
   })
 
@@ -72,18 +72,18 @@ describe('heat', () => {
   /** Rips one slot apart, so all of them share the heat window. */
   const burst = (count: number) => Array.from({ length: count }, (_, i) => rip(`w${i}`, FIRST + i))
 
-  it('adds +5s, then +3s, then +1s, then nothing as ripping speeds up', () => {
+  it('adds +10s, then +5s, then +3s, then +1s as ripping speeds up', () => {
     const events = burst(12)
     const result = reduceRound({ packsTotal: 100, events, currentSlot: FIRST + 12 })
     const added = events.slice(1).map((event) => result.added.get(event.signature))
-    expect(added).toEqual([13, 8, 8, 8, 3, 3, 3, 3, 0, 0, 0])
-    expect(result.deadlineSlot).toBe(D0 + 13 + 8 * 3 + 3 * 4)
+    expect(added).toEqual([25, 13, 13, 13, 8, 8, 8, 8, 3, 3, 3])
+    expect(result.deadlineSlot).toBe(D0 + 25 + 13 * 3 + 8 * 4 + 3 * 3)
   })
 
   it('cools down once the window empties', () => {
     const events = [...burst(10), rip('late', FIRST + 40)]
     const result = reduceRound({ packsTotal: 100, events, currentSlot: FIRST + 41 })
-    expect(result.added.get(events.at(-1)!.signature)).toBe(13)
+    expect(result.added.get(events.at(-1)!.signature)).toBe(25)
   })
 
   it('treats a rip exactly at the edge of the window as gone', () => {
@@ -91,22 +91,32 @@ describe('heat', () => {
     const edge = rip('b', FIRST + RULES.heatWindowSlots)
     const inside = rip('c', FIRST + RULES.heatWindowSlots + 1)
     const result = reduceRound({ packsTotal: 100, events: [first, edge, inside], currentSlot: FIRST + 30 })
-    expect(result.added.get(edge.signature)).toBe(13) // only itself in the window
-    expect(result.added.get(inside.signature)).toBe(13) // itself and the one before
+    expect(result.added.get(edge.signature)).toBe(25) // only itself in the window
+    expect(result.added.get(inside.signature)).toBe(25) // itself and the one before
   })
 
-  it('stops adding time at peak heat', () => {
+  it('still adds +1s at peak heat', () => {
     const events = burst(30)
     const result = reduceRound({ packsTotal: 100, events, currentSlot: FIRST + 30 })
-    expect(result.deadlineSlot).toBe(D0 + 13 + 8 * 3 + 3 * 4)
-    expect(result.heat.nextAddSlots).toBe(0)
+    expect(result.deadlineSlot).toBe(D0 + 25 + 13 * 3 + 8 * 4 + 3 * 21)
+    expect(result.heat.nextAddSlots).toBe(3)
+  })
+
+  it('keeps a round on the timer it opened with', () => {
+    const events = burst(12)
+    const addedBy = (saved: string | null) => {
+      const result = reduceRound({ packsTotal: 100, events, currentSlot: FIRST + 12, rules: rulesForRound(saved) })
+      return events.slice(1).map((event) => result.added.get(event.signature))
+    }
+    expect(addedBy(null)).toEqual([13, 8, 8, 8, 3, 3, 3, 3, 0, 0, 0])
+    expect(addedBy(JSON.stringify(RULES.heatTiers))).toEqual([25, 13, 13, 13, 8, 8, 8, 8, 3, 3, 3])
   })
 
   it('reports what the next rip would add', () => {
     const quiet = reduceRound({ packsTotal: 100, events: [], currentSlot: FIRST })
-    expect(quiet.heat).toEqual({ recentRips: 0, nextAddSlots: 13 })
+    expect(quiet.heat).toEqual({ recentRips: 0, nextAddSlots: 25 })
     const warm = reduceRound({ packsTotal: 100, events: burst(5), currentSlot: FIRST + 5 })
-    expect(warm.heat).toEqual({ recentRips: 5, nextAddSlots: 3 })
+    expect(warm.heat).toEqual({ recentRips: 5, nextAddSlots: 8 })
     const cooled = reduceRound({ packsTotal: 100, events: burst(5), currentSlot: FIRST + 40 })
     expect(cooled.heat.recentRips).toBe(0)
   })
@@ -199,7 +209,7 @@ describe('5-minute drop', () => {
     let deadline = FIRST + RULES.startSlots
     for (let i = 1; i < k; i++) {
       events.push(rip(`w${i}`, deadline))
-      deadline += 13
+      deadline += 25
     }
     return { events, deadline }
   }
@@ -211,13 +221,13 @@ describe('5-minute drop', () => {
     expect(result.status).toBe('cutoff')
   })
 
-  it('needs 53 rips: a 52-pack round runs out just before the drop', () => {
-    expect(minPacksForDrop()).toBe(53)
-    const at52 = slowestRound(52)
-    expect(at52.deadline).toBeLessThan(FIRST + RULES.dropSlots)
-    expect(reduceRound({ packsTotal: 100, events: at52.events, currentSlot: at52.deadline + 10_000 }).drops).toHaveLength(0)
-    const at53 = slowestRound(53)
-    expect(reduceRound({ packsTotal: 100, events: at53.events, currentSlot: at53.deadline + 10_000 }).drops).toHaveLength(1)
+  it('needs 29 rips: a 28-pack round ends on the drop slot, too soon to fire', () => {
+    expect(minPacksForDrop()).toBe(29)
+    const at28 = slowestRound(28)
+    expect(at28.deadline).toBe(FIRST + RULES.dropSlots)
+    expect(reduceRound({ packsTotal: 100, events: at28.events, currentSlot: at28.deadline + 10_000 }).drops).toHaveLength(0)
+    const at29 = slowestRound(29)
+    expect(reduceRound({ packsTotal: 100, events: at29.events, currentSlot: at29.deadline + 10_000 }).drops).toHaveLength(1)
   })
 
   it('loses to the winner when the drop lands exactly on the deadline', () => {

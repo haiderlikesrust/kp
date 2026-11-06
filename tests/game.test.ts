@@ -306,7 +306,7 @@ describe('5-minute drop', () => {
     for (let i = 0; i < rips; i++) {
       const who = players[Math.min(i % 12, 7)] as string
       w.chain.burn({ wallet: who, roundId: id })
-      await w.cycle(13)
+      await w.cycle(25)
     }
     return players
   }
@@ -314,7 +314,7 @@ describe('5-minute drop', () => {
   it('sends 5 random cards to the top 5, and the rest to the winner', async () => {
     world = await makeWorld({ usdc: 5_200 })
     const id = await world.openRound()
-    const players = await longRound(world, id, 62)
+    const players = await longRound(world, id, 40)
     await world.cycle(600)
     await world.until(() => world.settled(id))
 
@@ -335,7 +335,7 @@ describe('5-minute drop', () => {
     expect(drops.every((row) => row.state === 'delivered')).toBe(true)
 
     const wins = await world.db.query(`SELECT * FROM payouts WHERE round_id = $1 AND reason = 'win'`, [id])
-    expect(wins).toHaveLength(57)
+    expect(wins).toHaveLength(35)
     expect(new Set(wins.map((row) => row.recipient))).toEqual(new Set([round.winner]))
     expect(players).toContain(round.winner)
     assertNoDoubleSends(world)
@@ -345,13 +345,13 @@ describe('5-minute drop', () => {
     world = await makeWorld({ usdc: 5_200 })
     const id = await world.openRound()
     const solo = wallet()
-    for (let i = 0; i < 62; i++) {
+    for (let i = 0; i < 40; i++) {
       world.chain.burn({ wallet: solo, roundId: id })
-      await world.cycle(13)
+      await world.cycle(25)
     }
     await world.cycle(600)
     await world.until(() => world.settled(id))
-    expect(await ownedBy(world, solo)).toHaveLength(62)
+    expect(await ownedBy(world, solo)).toHaveLength(40)
     assertNoDoubleSends(world)
     expect(await world.count(`SELECT count(*)::int AS n FROM payouts WHERE reason = 'drop'`)).toBe(1)
   })
@@ -532,7 +532,7 @@ describe('burn totals', () => {
     expect(state.burnedAllTime).toEqual({ tokens: 300_000, usd: 37.5 })
     expect(state.burnUsd).toBe(12.5)
     expect(state.round?.topBurners[0]).toEqual({ wallet: big, rips: 2, tokens: 200_000, usd: 25 })
-    expect(state.round?.rips.map((entry) => entry.addedSeconds)).toEqual([30, 5, 3])
+    expect(state.round?.rips.map((entry) => entry.addedSeconds)).toEqual([30, 10, 5])
   })
 
   it('counts late burns, since those coins are gone too, but not vouchers', async () => {
@@ -564,6 +564,18 @@ describe('burn totals', () => {
 })
 
 describe('restart', () => {
+  it('keeps a running round on the timer it opened with', async () => {
+    world = await makeWorld({ usdc: 700 })
+    const id = await world.openRound()
+    expect(JSON.parse((await world.round(id)).heat_tiers)).toEqual(RULES.heatTiers)
+    // A round from before timers were saved, like the one live during this deploy.
+    await world.db.query(`UPDATE rounds SET heat_tiers = NULL WHERE id = $1`, [id])
+    await rip(world, wallet(), id)
+    await rip(world, wallet(), id)
+    const round = await world.round(id)
+    expect(round.deadline_slot).toBe(round.first_slot + RULES.startSlots + 13)
+  })
+
   it('replays to the same result after a restart mid-round', async () => {
     world = await makeWorld({ usdc: 700 })
     const id = await world.openRound()

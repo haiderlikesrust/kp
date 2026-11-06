@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto'
 import { commitHash, pickDrop, shuffleLineup } from '../../shared/fairness.ts'
 import { LADDER, MIN_TREASURY, expandStep, fitToStock, machineFor, pickStep } from '../../shared/ladder.ts'
-import { RULES } from '../../shared/rules.ts'
+import { RULES, rulesForRound } from '../../shared/rules.ts'
 import type { Chain } from '../chain/types.ts'
 import type { Db, Queryable, Row } from '../db/index.ts'
 import { reduceRound, type FiredDrop, type RipEvent, type RoundResult } from '../engine/reducer.ts'
@@ -104,8 +104,8 @@ export class Game {
 
     await db.tx(async (q) => {
       await q.query(
-        `INSERT INTO rounds (id, status, burn_raw, packs_total, secret, commit_hash) VALUES ($1, 'sized', $2, $3, $4, $5)`,
-        [id, burnRaw.toString(), lineup.length, secret, commitHash(secret)],
+        `INSERT INTO rounds (id, status, burn_raw, packs_total, secret, commit_hash, heat_tiers) VALUES ($1, 'sized', $2, $3, $4, $5, $6)`,
+        [id, burnRaw.toString(), lineup.length, secret, commitHash(secret), JSON.stringify(RULES.heatTiers)],
       )
       for (const [position, price] of lineup.entries()) {
         await q.query(`INSERT INTO lineup_slots (round_id, position, price) VALUES ($1, $2, $3)`, [id, position, price])
@@ -155,7 +155,7 @@ export class Game {
     return {
       events,
       picks,
-      result: reduceRound({ packsTotal: round.packs_total, events, currentSlot: slot, dropPicks: picks }),
+      result: reduceRound({ packsTotal: round.packs_total, events, currentSlot: slot, dropPicks: picks, rules: rulesForRound(round.heat_tiers) }),
     }
   }
 

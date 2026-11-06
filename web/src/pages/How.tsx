@@ -6,7 +6,7 @@ import { usd } from '../lib/format.ts'
 const STEPS: [string, string][] = [
   ['Trading funds the treasury', 'Creator fees from the coin are converted to USDC. The bigger the treasury, the bigger the packs in the next round.'],
   ['Burn to rip', 'Burn 100,000 coins to rip one pack. That is all you pay. The treasury buys the pack, and the card goes into the shared pot.'],
-  ['Beat the clock', 'The first rip starts a 30-second timer. A rip adds 5 seconds, but the busier it gets the less each rip buys: 3 seconds once a few people are ripping, 1 second when it gets hectic, and nothing at peak heat.'],
+  ['Beat the clock', 'The first rip starts a 30-second timer. A rip adds 10 seconds, but the busier it gets the less each rip buys: 5 seconds once a few people are ripping, 3 seconds when it gets hectic, and 1 second at peak heat.'],
   ['Last rip takes it all', 'When the timer hits zero, the last ripper wins every card left in the pot. If the last pack goes first, whoever ripped it wins right then.'],
   ['The 5-minute drop', `A second clock starts on the first rip. If nobody has won when it hits zero, 5 random cards from the pot go to that window’s 5 biggest burners, one each. Then it resets. Only bigger rounds last that long: at least ${minPacksForDrop()} packs.`],
 ]

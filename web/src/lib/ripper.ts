@@ -26,12 +26,14 @@ async function post(path: string, body: unknown): Promise<any> {
 }
 
 /** Sends the signature a few times: the first posts can beat the transaction. */
-function hint(signature: string): void {
+function hint(signature: string, onRejected: () => void): void {
   let tries = 0
   const send = () => {
     post('/api/rips', { signature })
       .then(({ result }) => {
         if (result === 'pending' && tries++ < 8) setTimeout(send, 1_200)
+        // Wallets return once they send, so a failed burn only shows up here.
+        if (result === 'rejected') onRejected()
       })
       .catch(() => {})
   }
@@ -95,7 +97,10 @@ export function useRipper() {
       try {
         const signature = await send()
         setRips((current) => [...current, { signature, phase: 'landing', startedAt: Date.now(), card: null }])
-        hint(signature)
+        hint(signature, () => {
+          setRips((current) => current.filter((entry) => entry.signature !== signature))
+          setError('That did not go through. Check you hold enough coins, then try again.')
+        })
       } catch (err) {
         setError(friendlyError(err))
       } finally {

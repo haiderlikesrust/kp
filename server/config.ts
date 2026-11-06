@@ -15,6 +15,8 @@ export interface Config {
   /** Shown on the site. Practice mode's own coin is fake and never shown. */
   contractAddress: string | null
   rpcUrl: string
+  /** Only for providers whose WebSocket isn't at the RPC's own address. */
+  wsUrl?: string
   dasRpcUrl: string
   devPrivateKey: string
   usdcMint: string
@@ -103,6 +105,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     coinMint: required(env, 'COIN_MINT'),
     contractAddress: env.COIN_MINT || null,
     rpcUrl,
+    wsUrl: env.SOLANA_WS_URL || undefined,
     dasRpcUrl: env.DAS_RPC_URL || rpcUrl,
     devPrivateKey: required(env, 'DEV_WALLET_PRIVATE_KEY'),
     usdcMint: env.USDC_MINT || network.usdcMint,

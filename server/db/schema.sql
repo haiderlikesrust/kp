@@ -19,6 +19,9 @@ CREATE TABLE IF NOT EXISTS rounds (
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- The timer this round opened with, as JSON. Empty on rounds older than this column.
+ALTER TABLE rounds ADD COLUMN IF NOT EXISTS heat_tiers TEXT;
+
 -- One row per pack in a round, in shuffled order.
 CREATE TABLE IF NOT EXISTS lineup_slots (
   round_id     INTEGER NOT NULL REFERENCES rounds(id),

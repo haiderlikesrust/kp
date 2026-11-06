@@ -11,7 +11,7 @@ import type {
   WalletView,
 } from '../../shared/api.ts'
 import { MIN_TREASURY } from '../../shared/ladder.ts'
-import { slotsToSeconds } from '../../shared/rules.ts'
+import { rulesForRound, slotsToSeconds } from '../../shared/rules.ts'
 import { reduceRound } from '../engine/reducer.ts'
 import type { Db, Row } from '../db/index.ts'
 import type { Game } from './service.ts'
@@ -63,7 +63,7 @@ async function roundView(db: Db, game: Game, round: Row, slot: number, decimals:
   const picks = new Map<number, string[]>(
     sweeps.filter((sweep) => sweep.picks).map((sweep) => [sweep.idx as number, JSON.parse(sweep.picks) as string[]]),
   )
-  const result = reduceRound({ packsTotal: round.packs_total, events, currentSlot: slot, dropPicks: picks })
+  const result = reduceRound({ packsTotal: round.packs_total, events, currentSlot: slot, dropPicks: picks, rules: rulesForRound(round.heat_tiers) })
   const orderBySig = new Map(orders.map((order) => [order.rip_sig, order]))
   const tokensPerBurn = Number(BigInt(round.burn_raw) / 10n ** BigInt(decimals))
   const burnBySig = new Map(burnRows.map((burn) => [burn.signature, burn]))

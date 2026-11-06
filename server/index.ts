@@ -61,6 +61,7 @@ async function main(): Promise<void> {
   } else {
     const solana = new SolanaChain({
       rpcUrl: config.rpcUrl,
+      wsUrl: config.wsUrl,
       dasRpcUrl: config.dasRpcUrl,
       devPrivateKey: config.devPrivateKey,
       usdcMint: config.usdcMint,

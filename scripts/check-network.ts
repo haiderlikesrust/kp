@@ -2,7 +2,8 @@
 // throwaway key, spends nothing, and never broadcasts a transaction.
 // Usage: npm run check:network
 // Set SOLANA_RPC_URL for a private mainnet RPC; DAS checks need one.
-import { Keypair, VersionedTransaction } from '@solana/web3.js'
+import 'dotenv/config'
+import { Keypair, PublicKey, VersionedTransaction } from '@solana/web3.js'
 import bs58 from 'bs58'
 import { PACK_TIERS } from '../shared/ladder.ts'
 import { signPartial } from '../server/chain/sign.ts'
@@ -13,6 +14,7 @@ import { validatePackTx } from '../server/packs/validate.ts'
 
 const DEV = { usdc: 'Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr', gacha: '9ZSgA3PMjeAU8K6CWzgJ8oDnhZwwSgHZu6KP3X95t7Jq' }
 const USDC = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
+const MEMO_PROGRAM = new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr')
 const rpcUrl = process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com'
 const burner = Keypair.generate()
 
@@ -30,6 +32,7 @@ const production = new CollectorCrypt({ base: 'https://gacha.collectorcrypt.com'
 const sandbox = new CollectorCrypt({ base: 'https://dev-gacha.collectorcrypt.com' })
 const chain = new SolanaChain({
   rpcUrl,
+  wsUrl: process.env.SOLANA_WS_URL || undefined,
   dasRpcUrl: process.env.DAS_RPC_URL || rpcUrl,
   devPrivateKey: bs58.encode(burner.secretKey),
   usdcMint: USDC,
@@ -89,6 +92,30 @@ await check('memo filter reads transaction history', async () => {
   const signatures = await chain.memoSignatures(burner.publicKey.toBase58(), null)
   return `${signatures.length} matching signatures`
 })
+
+// The indexer needs these. RPCs built only for sending often leave them out.
+await check('reads a past transaction and its place in the block', async () => {
+  const [recent] = await chain.connection.getSignaturesForAddress(MEMO_PROGRAM, { limit: 1 }, 'confirmed')
+  if (!recent) throw new Error('no recent transaction')
+  if (!(await chain.getParsedTx(recent.signature, 'confirmed'))) throw new Error('transaction not found')
+  const index = await chain.blockIndexOf(recent.slot, recent.signature)
+  return `${recent.signature.slice(0, 8)} is number ${index} in block ${recent.slot}`
+})
+
+await check('websocket delivers live logs', () =>
+  new Promise<string>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('nothing arrived in 20s')), 20_000)
+    const listener = chain.connection.onLogs(
+      MEMO_PROGRAM,
+      (entry) => {
+        clearTimeout(timer)
+        void chain.connection.removeOnLogsListener(listener)
+        resolve(`received ${entry.signature.slice(0, 8)}`)
+      },
+      'confirmed',
+    )
+  }),
+)
 
 const list = (await (await fetch('https://gacha.collectorcrypt.com/api/getNfts?code=pokemon_25&limit=24')).json()) as {
   nfts: { nft_address: string }[]

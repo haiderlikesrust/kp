@@ -78,7 +78,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           account: WalletAccount
           chain: string
           transaction: Uint8Array
-          options?: { commitment?: string; skipPreflight?: boolean }
+          options?: { skipPreflight?: boolean }
         }): Promise<readonly { signature: Uint8Array }[]>
       }
       const chain = config?.mode === 'devnet' ? 'solana:devnet' : 'solana:mainnet'
@@ -87,7 +87,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         chain,
         transaction,
         // Skip preflight so a rip in the last seconds loses no time to simulation.
-        options: { commitment: 'confirmed', skipPreflight: true },
+        // No commitment option: Solflare rejects it, and the indexer confirms the burn.
+        options: { skipPreflight: true },
       })
       if (!result) throw new Error('The wallet did not return a signature')
       return bs58.encode(result.signature)
